@@ -4,28 +4,57 @@ using System.Collections.Generic;
 public class SpiderBehavior : MonoBehaviour
 {
     [Header("Idle Movement Settings")]
-    [SerializeField] Transform[] possibleTargets; // Idle points
-    [SerializeField] float lerpTimeMax = 2f; // Movement duration between points
-    [SerializeField] AnimationCurve idleWalkCurve; // Smooth curve for movement
+
+    [SerializeField]
+    Transform[] possibleTargets; // Idle points
+
+    [SerializeField]
+    float lerpTimeMax = 2f; // Movement duration between points
+
+    [SerializeField]
+    AnimationCurve idleWalkCurve; // Smooth curve for movement
 
     [Header("Hunger Settings")]
-    [SerializeField] float hungerInterval = 10f; // Time between hunger phases
-    [SerializeField] int maxHunger = 5; // Hunger refilled after eating
+
+    [SerializeField]
+    float hungerInterval = 10f; // Time between hunger phases
+
+    [SerializeField]
+    int maxHunger = 5; // Hunger refilled after eating
+
+    [SerializeField]
+    float maxHuntTime = 3f; // Maximum duration spider will hunt before giving up
+
+    [Header("Effects")]
+
+    [SerializeField]
+    GameObject bloodParticlePrefab; // Assign your blood particle prefab
+
+    [SerializeField]
+    AudioClip crunchSound;          // Assign your crunch sound
+    
+    [SerializeField, Range(0f, 1f)]
+    float crunchVolume = 0.8f;
+
+    private AudioSource audioSource;
 
     private enum SpiderStates { Idling, Eating }
     private SpiderStates state = SpiderStates.Idling;
 
-    private Transform target; // Current movement target
-    private Vector3 startPos; // Start position for lerp
-    private float lerpTime; // Tracks movement progress
+    private Transform target;
+    private Vector3 startPos;
+    private float lerpTime;
 
-    private float hungerTimer; // Counts down to hunger
-    private int hungerVal; // Current hunger value
+    private float hungerTimer;
+    private int hungerVal;
 
-    private List<GameObject> allFood = new List<GameObject>(); // All food in scene
-    private GameObject touchingObj; // Object currently touching
+    private List<GameObject> allFood = new List<GameObject>();
+    private GameObject touchingObj;
 
-    private bool facingRight = true; // Track facing direction
+    private bool facingRight = true;
+
+    // Track how long the spider has been hunting
+    private float huntTimer;
 
     void Start()
     {
@@ -33,11 +62,15 @@ public class SpiderBehavior : MonoBehaviour
         hungerTimer = hungerInterval;
         FindAllFood();
 
-        // Default movement curve if none provided
         if (idleWalkCurve == null || idleWalkCurve.keys.Length == 0)
-        {
             idleWalkCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        }
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
     }
 
     void Update()
@@ -56,7 +89,6 @@ public class SpiderBehavior : MonoBehaviour
     // ---------------------- STATE: IDLE ----------------------
     void RunIdle()
     {
-        // Pick a random target if none
         if (target == null && possibleTargets.Length > 0)
         {
             target = possibleTargets[Random.Range(0, possibleTargets.Length)];
@@ -64,42 +96,46 @@ public class SpiderBehavior : MonoBehaviour
             lerpTime = 0;
         }
 
-        // Move toward target
         if (target != null)
         {
             Vector3 newPos = Move();
             FlipByDirection(newPos.x - transform.position.x);
             transform.position = newPos;
 
-            // When finished moving, pick a new random target
             if (lerpTime >= lerpTimeMax)
-            {
                 target = null;
-            }
         }
 
-        // Countdown hunger
         hungerTimer -= Time.deltaTime;
         if (hungerTimer <= 0)
         {
-            hungerVal = 0; // spider becomes hungry
-            hungerTimer = hungerInterval; // reset timer
+            hungerVal = 0;
+            hungerTimer = hungerInterval;
             target = null;
-            state = SpiderStates.Eating; // switch to eating mode
+
+            // Enter hunting mode and reset hunt timer
+            huntTimer = 0f;
+            state = SpiderStates.Eating;
         }
     }
 
     // ---------------------- STATE: EATING ----------------------
     void RunEat()
     {
-        // If no food left, go back to idling
+        huntTimer += Time.deltaTime;
+        if (huntTimer >= maxHuntTime)
+        {
+            state = SpiderStates.Idling;
+            target = null;
+            return;
+        }
+
         if (allFood.Count == 0)
         {
             state = SpiderStates.Idling;
             return;
         }
 
-        // If no target, find nearest food
         if (target == null)
         {
             Transform foodTarget = FindNearest(allFood);
@@ -114,7 +150,6 @@ public class SpiderBehavior : MonoBehaviour
             lerpTime = 0;
         }
 
-        // Move toward food
         Vector3 newPos2 = Move();
         FlipByDirection(newPos2.x - transform.position.x);
         transform.position = newPos2;
@@ -122,9 +157,23 @@ public class SpiderBehavior : MonoBehaviour
         // Check if touching food
         if (touchingObj != null && touchingObj.CompareTag("Food"))
         {
-            // Eat food
             GameObject foodToDestroy = touchingObj;
             allFood.Remove(foodToDestroy);
+
+            // Spawn blood particle effect
+            if (bloodParticlePrefab != null)
+            {
+                GameObject blood = Instantiate(
+                    bloodParticlePrefab,
+                    foodToDestroy.transform.position,
+                    Quaternion.identity
+                );
+                Destroy(blood, 2f);
+            }
+
+            // Play crunch sound
+            if (crunchSound != null && audioSource != null)
+                audioSource.PlayOneShot(crunchSound, crunchVolume);
 
             Destroy(foodToDestroy);
             touchingObj = null;
@@ -143,7 +192,7 @@ public class SpiderBehavior : MonoBehaviour
         float easedT = idleWalkCurve.Evaluate(t);
 
         Vector3 newPos = Vector3.Lerp(startPos, target.position, easedT);
-        newPos.z = 0; // Stay in 2D
+        newPos.z = 0;
         return newPos;
     }
 
@@ -195,16 +244,12 @@ public class SpiderBehavior : MonoBehaviour
     void OnTriggerEnter2D(Collider2D col)
     {
         if (col != null)
-        {
             touchingObj = col.gameObject;
-        }
     }
 
     void OnTriggerExit2D(Collider2D col)
     {
         if (col != null && col.gameObject == touchingObj)
-        {
             touchingObj = null;
-        }
     }
 }

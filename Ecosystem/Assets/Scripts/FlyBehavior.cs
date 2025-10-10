@@ -2,22 +2,48 @@ using UnityEngine;
 
 public class FlyBehavior : MonoBehaviour
 {
+    private enum FlyState { Idle, Flee, Panic }
+
     [Header("Movement Settings")]
-    [SerializeField] float moveSpeed = 2f;           // Normal wandering speed
-    [SerializeField] float fleeSpeed = 5f;           // Speed when fleeing from spider
-    [SerializeField] float panicSpeed = 7f;          // Speed when spider is very close
-    [SerializeField] float minWaitTime = 1f;
-    [SerializeField] float maxWaitTime = 3f;
-    [SerializeField] float edgePadding = 0.5f;
+
+    [SerializeField]
+    float moveSpeed = 2f;
+
+    [SerializeField]
+    float fleeSpeed = 5f;
+
+    [SerializeField]
+    float panicSpeed = 7f;
+
+    [SerializeField]
+    float minWaitTime = 1f;
+
+    [SerializeField]
+    float maxWaitTime = 3f;
+
+    [SerializeField]
+    float edgePadding = 0.5f;
 
     [Header("Wiggle Settings")]
-    [SerializeField] float wiggleAmplitude = 0.2f;
-    [SerializeField] float wiggleFrequency = 8f;
+
+    [SerializeField]
+    float wiggleAmplitude = 0.2f;
+
+    [SerializeField]
+    float wiggleFrequency = 8f;
 
     [Header("Spider Detection")]
-    [SerializeField] float detectionRange = 3f;      // Range to start fleeing
-    [SerializeField] float panicRange = 1.2f;        // Range for panic dart
-    [SerializeField] string spiderTag = "Spider";    // Tag used by the spider
+
+    [SerializeField]
+    float detectionRange = 3f;
+
+    [SerializeField]
+    float panicRange = 1.2f;
+    
+    [SerializeField]
+    string spiderTag = "Spider";
+
+    private FlyState currentState = FlyState.Idle;
 
     private Vector3 targetPos;
     private bool moving = false;
@@ -25,8 +51,6 @@ public class FlyBehavior : MonoBehaviour
     private Camera mainCam;
     private Vector3 basePosition;
     private Transform spiderTarget;
-    private bool fleeing = false;
-    private bool panicking = false;
 
     void Start()
     {
@@ -42,85 +66,110 @@ public class FlyBehavior : MonoBehaviour
 
     void Update()
     {
-        if (spiderTarget != null)
-        {
-            float dist = Vector3.Distance(transform.position, spiderTarget.position);
+        if (spiderTarget == null) return;
 
-            if (dist < panicRange)
-            {
-                // PANIC — random dart away fast
-                if (!panicking)
-                {
-                    panicking = true;
-                    fleeing = false;
-                    PickPanicDirection();
-                }
-                RunPanic();
-            }
-            else if (dist < detectionRange)
-            {
-                // FLEE — move directly away from spider
-                fleeing = true;
-                panicking = false;
-                RunFromSpider();
-            }
-            else
-            {
-                // Calm — wander normally
-                fleeing = false;
-                panicking = false;
-                if (moving)
-                    MoveTowardTarget();
-                else
-                {
-                    waitTimer -= Time.deltaTime;
-                    if (waitTimer <= 0f)
-                        PickNewTarget();
-                }
-            }
-        }
+        float dist = Vector3.Distance(transform.position, spiderTarget.position);
+        UpdateStateBasedOnDistance(dist);
+        UpdateStateBehavior();
 
         ApplyWiggle();
     }
 
-    // Normal wandering
-    void MoveTowardTarget()
-    {
-        basePosition = Vector3.MoveTowards(basePosition, targetPos, moveSpeed * Time.deltaTime);
+    // ---------------- STATE SYSTEM ----------------
 
-        if (Vector3.Distance(basePosition, targetPos) < 0.05f)
+    void UpdateStateBasedOnDistance(float dist)
+    {
+        switch (currentState)
         {
-            moving = false;
-            waitTimer = Random.Range(minWaitTime, maxWaitTime);
+            case FlyState.Panic:
+                if (dist > panicRange) // If no longer panicking
+                {
+                    currentState = (dist < detectionRange) ? FlyState.Flee : FlyState.Idle;
+                }
+                break;
+
+            case FlyState.Flee:
+                if (dist < panicRange)
+                    currentState = FlyState.Panic;
+                else if (dist >= detectionRange)
+                    currentState = FlyState.Idle;
+                break;
+
+            case FlyState.Idle:
+                if (dist < panicRange)
+                    currentState = FlyState.Panic;
+                else if (dist < detectionRange)
+                    currentState = FlyState.Flee;
+                break;
         }
     }
 
-    // Runs away in a straight line from spider
-    void RunFromSpider()
+    void UpdateStateBehavior()
+    {
+        switch (currentState)
+        {
+            case FlyState.Idle:
+                UpdateIdle();
+                break;
+
+            case FlyState.Flee:
+                UpdateFlee();
+                break;
+
+            case FlyState.Panic:
+                UpdatePanic();
+                break;
+        }
+    }
+
+    // ---------------- STATE BEHAVIORS ----------------
+
+    void UpdateIdle()
+    {
+        if (moving)
+        {
+            basePosition = Vector3.MoveTowards(basePosition, targetPos, moveSpeed * Time.deltaTime);
+            if (Vector3.Distance(basePosition, targetPos) < 0.05f)
+            {
+                moving = false;
+                waitTimer = Random.Range(minWaitTime, maxWaitTime);
+            }
+        }
+        else
+        {
+            waitTimer -= Time.deltaTime;
+            if (waitTimer <= 0f)
+                PickNewTarget();
+        }
+    }
+
+    void UpdateFlee()
     {
         Vector3 directionAway = (transform.position - spiderTarget.position).normalized;
         basePosition += directionAway * fleeSpeed * Time.deltaTime;
         ClampToCameraBounds();
     }
 
-    // Random darting direction (panic mode)
-    void PickPanicDirection()
+    void UpdatePanic()
     {
-        Vector2 randomDir = Random.insideUnitCircle.normalized;
-        targetPos = basePosition + new Vector3(randomDir.x, randomDir.y, 0f) * 2f;
-    }
+        // If starting panic, pick a new dart direction each time
+        if (!moving)
+        {
+            PickPanicDirection();
+            moving = true;
+        }
 
-    void RunPanic()
-    {
         basePosition = Vector3.MoveTowards(basePosition, targetPos, panicSpeed * Time.deltaTime);
+
         if (Vector3.Distance(basePosition, targetPos) < 0.1f)
         {
-            panicking = false; // end panic after reaching dart point
+            moving = false; // Panic dart complete
         }
+
         ClampToCameraBounds();
     }
 
-    // Random idle wandering target
+
     void PickNewTarget()
     {
         if (mainCam == null)
@@ -141,7 +190,12 @@ public class FlyBehavior : MonoBehaviour
         moving = true;
     }
 
-    // Keep fly inside camera view
+    void PickPanicDirection()
+    {
+        Vector2 randomDir = Random.insideUnitCircle.normalized;
+        targetPos = basePosition + new Vector3(randomDir.x, randomDir.y, 0f) * 2f;
+    }
+
     void ClampToCameraBounds()
     {
         Vector3 camBottomLeft = mainCam.ViewportToWorldPoint(new Vector3(0, 0, -mainCam.transform.position.z));
@@ -156,7 +210,6 @@ public class FlyBehavior : MonoBehaviour
         basePosition.y = Mathf.Clamp(basePosition.y, minY, maxY);
     }
 
-    // Add small fluttery wiggle
     void ApplyWiggle()
     {
         float offsetX = Mathf.Sin(Time.time * wiggleFrequency) * wiggleAmplitude;
