@@ -4,8 +4,6 @@ public class FlyBehavior : MonoBehaviour
 {
     private enum FlyState { Idle, Flee, Panic }
 
-    [Header("Movement Settings")]
-
     [SerializeField]
     float moveSpeed = 2f;
 
@@ -24,15 +22,12 @@ public class FlyBehavior : MonoBehaviour
     [SerializeField]
     float edgePadding = 0.5f;
 
-    [Header("Wiggle Settings")]
 
     [SerializeField]
     float wiggleAmplitude = 0.2f;
 
     [SerializeField]
     float wiggleFrequency = 8f;
-
-    [Header("Spider Detection")]
 
     [SerializeField]
     float detectionRange = 3f;
@@ -82,7 +77,7 @@ public class FlyBehavior : MonoBehaviour
         switch (currentState)
         {
             case FlyState.Panic:
-                if (dist > panicRange) // If no longer panicking
+                if (dist > panicRange)
                 {
                     currentState = (dist < detectionRange) ? FlyState.Flee : FlyState.Idle;
                 }
@@ -152,7 +147,6 @@ public class FlyBehavior : MonoBehaviour
 
     void UpdatePanic()
     {
-        // If starting panic, pick a new dart direction each time
         if (!moving)
         {
             PickPanicDirection();
@@ -163,7 +157,7 @@ public class FlyBehavior : MonoBehaviour
 
         if (Vector3.Distance(basePosition, targetPos) < 0.1f)
         {
-            moving = false; // Panic dart complete
+            moving = false;
         }
 
         ClampToCameraBounds();

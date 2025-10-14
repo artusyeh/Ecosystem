@@ -6,6 +6,12 @@ TagManager:
   tags:
   - Food
   - Spider
+  - Hungry
+  - Lurking
+  - Attacking
+  - JellyEgg
+  - BlobEgg
+  - Floor
   layers:
   - Default
   - TransparentFX

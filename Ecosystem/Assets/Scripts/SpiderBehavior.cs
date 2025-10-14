@@ -3,42 +3,25 @@ using System.Collections.Generic;
 
 public class SpiderBehavior : MonoBehaviour
 {
-    [Header("Idle Movement Settings")]
+    [SerializeField] Transform[] possibleTargets;
+    [SerializeField] float lerpTimeMax = 2f;
+    [SerializeField] AnimationCurve idleWalkCurve;
 
-    [SerializeField]
-    Transform[] possibleTargets; // Idle points
+    [SerializeField] float hungerInterval = 10f;
+    [SerializeField] int maxHunger = 5;
+    [SerializeField] float maxHuntTime = 3f;
 
-    [SerializeField]
-    float lerpTimeMax = 2f; // Movement duration between points
+    [SerializeField] GameObject eggPrefab;
+    [SerializeField] Transform eggSpawnPoint;
+    [SerializeField] int foodBeforeLayEgg = 3;
 
-    [SerializeField]
-    AnimationCurve idleWalkCurve; // Smooth curve for movement
-
-    [Header("Hunger Settings")]
-
-    [SerializeField]
-    float hungerInterval = 10f; // Time between hunger phases
-
-    [SerializeField]
-    int maxHunger = 5; // Hunger refilled after eating
-
-    [SerializeField]
-    float maxHuntTime = 3f; // Maximum duration spider will hunt before giving up
-
-    [Header("Effects")]
-
-    [SerializeField]
-    GameObject bloodParticlePrefab; // Assign your blood particle prefab
-
-    [SerializeField]
-    AudioClip crunchSound;          // Assign your crunch sound
-    
-    [SerializeField, Range(0f, 1f)]
-    float crunchVolume = 0.8f;
+    [SerializeField] GameObject bloodParticlePrefab;
+    [SerializeField] AudioClip crunchSound;
+    [SerializeField, Range(0f, 1f)] float crunchVolume = 0.8f;
 
     private AudioSource audioSource;
 
-    private enum SpiderStates { Idling, Eating }
+    private enum SpiderStates { Idling, Eating, LayingEgg }
     private SpiderStates state = SpiderStates.Idling;
 
     private Transform target;
@@ -52,9 +35,9 @@ public class SpiderBehavior : MonoBehaviour
     private GameObject touchingObj;
 
     private bool facingRight = true;
-
-    // Track how long the spider has been hunting
     private float huntTimer;
+
+    private int foodEatenCount = 0;
 
     void Start()
     {
@@ -82,6 +65,9 @@ public class SpiderBehavior : MonoBehaviour
                 break;
             case SpiderStates.Eating:
                 RunEat();
+                break;
+            case SpiderStates.LayingEgg:
+                RunLayEgg();
                 break;
         }
     }
@@ -113,7 +99,6 @@ public class SpiderBehavior : MonoBehaviour
             hungerTimer = hungerInterval;
             target = null;
 
-            // Enter hunting mode and reset hunt timer
             huntTimer = 0f;
             state = SpiderStates.Eating;
         }
@@ -160,18 +145,12 @@ public class SpiderBehavior : MonoBehaviour
             GameObject foodToDestroy = touchingObj;
             allFood.Remove(foodToDestroy);
 
-            // Spawn blood particle effect
             if (bloodParticlePrefab != null)
             {
-                GameObject blood = Instantiate(
-                    bloodParticlePrefab,
-                    foodToDestroy.transform.position,
-                    Quaternion.identity
-                );
+                GameObject blood = Instantiate(bloodParticlePrefab, foodToDestroy.transform.position, Quaternion.identity);
                 Destroy(blood, 2f);
             }
 
-            // Play crunch sound
             if (crunchSound != null && audioSource != null)
                 audioSource.PlayOneShot(crunchSound, crunchVolume);
 
@@ -180,8 +159,30 @@ public class SpiderBehavior : MonoBehaviour
 
             hungerVal = maxHunger;
             target = null;
-            state = SpiderStates.Idling;
+
+            foodEatenCount++;
+            if (foodEatenCount >= foodBeforeLayEgg)
+            {
+                state = SpiderStates.LayingEgg;
+            }
+            else
+            {
+                state = SpiderStates.Idling;
+            }
         }
+    }
+
+    // ---------------------- STATE: LAYING EGG ----------------------
+    void RunLayEgg()
+    {
+        if (eggPrefab != null)
+        {
+            Vector3 spawnPos = eggSpawnPoint != null ? eggSpawnPoint.position : transform.position;
+            Instantiate(eggPrefab, spawnPos, Quaternion.identity);
+        }
+
+        foodEatenCount = 0;
+        state = SpiderStates.Idling;
     }
 
     // ---------------------- MOVEMENT ----------------------
@@ -196,7 +197,6 @@ public class SpiderBehavior : MonoBehaviour
         return newPos;
     }
 
-    // ---------------------- FLIP BY DIRECTION ----------------------
     void FlipByDirection(float xMovement)
     {
         if (xMovement > 0 && !facingRight)
@@ -215,14 +215,13 @@ public class SpiderBehavior : MonoBehaviour
         }
     }
 
-    // ---------------------- FOOD MANAGEMENT ----------------------
     void FindAllFood()
     {
         allFood.Clear();
         allFood.AddRange(GameObject.FindGameObjectsWithTag("Food"));
     }
 
-    Transform FindNearest(List<GameObject> objsToFind)
+    Transform FindNearest(List<GameObject> objsToFind) //find nearest
     {
         float minDist = Mathf.Infinity;
         Transform nearest = null;
@@ -240,7 +239,6 @@ public class SpiderBehavior : MonoBehaviour
         return nearest;
     }
 
-    // ---------------------- COLLISION HANDLING ----------------------
     void OnTriggerEnter2D(Collider2D col)
     {
         if (col != null)
