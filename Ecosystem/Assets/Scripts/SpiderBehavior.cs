@@ -1,23 +1,37 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+
+//holy moly im gonna ksm
 public class SpiderBehavior : MonoBehaviour
 {
-    [SerializeField] Transform[] possibleTargets;
-    [SerializeField] float lerpTimeMax = 2f;
-    [SerializeField] AnimationCurve idleWalkCurve;
+    [SerializeField] 
+    Transform[] possibleTargets;
+    [SerializeField] 
+    float lerpTimeMax = 2f;
+    [SerializeField] 
+    AnimationCurve idleWalkCurve;
 
-    [SerializeField] float hungerInterval = 10f;
-    [SerializeField] int maxHunger = 5;
-    [SerializeField] float maxHuntTime = 3f;
+    [SerializeField] 
+    float hungerInterval = 10f;
+    [SerializeField] 
+    int maxHunger = 5;
+    [SerializeField] 
+    float maxHuntTime = 3f;
 
-    [SerializeField] GameObject eggPrefab;
-    [SerializeField] Transform eggSpawnPoint;
-    [SerializeField] int foodBeforeLayEgg = 3;
+    [SerializeField] 
+    GameObject eggPrefab;
+    [SerializeField] 
+    Transform eggSpawnPoint;
+    [SerializeField] 
+    int foodBeforeLayEgg = 3;
 
-    [SerializeField] GameObject bloodParticlePrefab;
-    [SerializeField] AudioClip crunchSound;
-    [SerializeField, Range(0f, 1f)] float crunchVolume = 0.8f;
+    [SerializeField] 
+    GameObject bloodParticlePrefab;
+    [SerializeField] 
+    AudioClip crunchSound;
+    [SerializeField, Range(0f, 1f)] 
+    float crunchVolume = 0.8f;
 
     private AudioSource audioSource;
 
@@ -39,6 +53,9 @@ public class SpiderBehavior : MonoBehaviour
 
     private int foodEatenCount = 0;
 
+    [SerializeField] float foodRefreshInterval = 5f;
+    private float foodRefreshTimer = 0f;
+
     void Start()
     {
         hungerVal = maxHunger;
@@ -58,6 +75,13 @@ public class SpiderBehavior : MonoBehaviour
 
     void Update()
     {
+        foodRefreshTimer += Time.deltaTime;
+        if (foodRefreshTimer >= foodRefreshInterval)
+        {
+            FindAllFood();
+            foodRefreshTimer = 0f;
+        }
+
         switch (state)
         {
             case SpiderStates.Idling:
@@ -72,7 +96,7 @@ public class SpiderBehavior : MonoBehaviour
         }
     }
 
-    // ---------------------- STATE: IDLE ----------------------
+    //STATE: IDLE 
     void RunIdle()
     {
         if (target == null && possibleTargets.Length > 0)
@@ -104,7 +128,7 @@ public class SpiderBehavior : MonoBehaviour
         }
     }
 
-    // ---------------------- STATE: EATING ----------------------
+    //STATE: EATING
     void RunEat()
     {
         huntTimer += Time.deltaTime;
@@ -172,7 +196,7 @@ public class SpiderBehavior : MonoBehaviour
         }
     }
 
-    // ---------------------- STATE: LAYING EGG ----------------------
+    //STATE: LAYING EGG
     void RunLayEgg()
     {
         if (eggPrefab != null)
@@ -185,7 +209,7 @@ public class SpiderBehavior : MonoBehaviour
         state = SpiderStates.Idling;
     }
 
-    // ---------------------- MOVEMENT ----------------------
+    //MOVEMENT
     Vector3 Move()
     {
         lerpTime += Time.deltaTime;
@@ -221,7 +245,7 @@ public class SpiderBehavior : MonoBehaviour
         allFood.AddRange(GameObject.FindGameObjectsWithTag("Food"));
     }
 
-    Transform FindNearest(List<GameObject> objsToFind) //find nearest
+    Transform FindNearest(List<GameObject> objsToFind)
     {
         float minDist = Mathf.Infinity;
         Transform nearest = null;

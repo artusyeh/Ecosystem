@@ -4,48 +4,40 @@ public class FlyBehavior : MonoBehaviour
 {
     private enum FlyState { Idle, Flee, Panic }
 
-    [SerializeField]
-    float moveSpeed = 2f;
+    [Header("Movement Settings")]
+    [SerializeField] float moveSpeed = 2f;
+    [SerializeField] float fleeSpeed = 5f;
+    [SerializeField] float panicSpeed = 7f;
+    [SerializeField] float minWaitTime = 1f;
+    [SerializeField] float maxWaitTime = 3f;
+    [SerializeField] float edgePadding = 0.5f;
 
-    [SerializeField]
-    float fleeSpeed = 5f;
+    [Header("Wiggle Motion")]
+    [SerializeField] float wiggleAmplitude = 0.2f;
+    [SerializeField] float wiggleFrequency = 8f;
 
-    [SerializeField]
-    float panicSpeed = 7f;
+    [Header("Detection")]
+    [SerializeField] float detectionRange = 3f;
+    [SerializeField] float panicRange = 1.2f;
+    [SerializeField] string spiderTag = "Spider";
 
-    [SerializeField]
-    float minWaitTime = 1f;
-
-    [SerializeField]
-    float maxWaitTime = 3f;
-
-    [SerializeField]
-    float edgePadding = 0.5f;
-
-
-    [SerializeField]
-    float wiggleAmplitude = 0.2f;
-
-    [SerializeField]
-    float wiggleFrequency = 8f;
-
-    [SerializeField]
-    float detectionRange = 3f;
-
-    [SerializeField]
-    float panicRange = 1.2f;
-    
-    [SerializeField]
-    string spiderTag = "Spider";
+    [Header("Egg Laying")]
+    [SerializeField] GameObject eggPrefab;
+    [SerializeField] Vector2 eggLayInterval = new Vector2(10f, 20f);
+    [SerializeField] Vector2Int eggCountRange = new Vector2Int(1, 3);
+    [SerializeField] float eggDropOffset = 0.3f;
 
     private FlyState currentState = FlyState.Idle;
-
     private Vector3 targetPos;
     private bool moving = false;
     private float waitTimer = 0f;
     private Camera mainCam;
     private Vector3 basePosition;
     private Transform spiderTarget;
+
+
+    private float eggTimer;
+    private float nextEggTime;
 
     void Start()
     {
@@ -57,6 +49,8 @@ public class FlyBehavior : MonoBehaviour
             spiderTarget = spiderObj.transform;
 
         PickNewTarget();
+
+        ResetEggTimer();
     }
 
     void Update()
@@ -68,9 +62,10 @@ public class FlyBehavior : MonoBehaviour
         UpdateStateBehavior();
 
         ApplyWiggle();
+
+        HandleEggLaying();
     }
 
-    // ---------------- STATE SYSTEM ----------------
 
     void UpdateStateBasedOnDistance(float dist)
     {
@@ -78,9 +73,7 @@ public class FlyBehavior : MonoBehaviour
         {
             case FlyState.Panic:
                 if (dist > panicRange)
-                {
                     currentState = (dist < detectionRange) ? FlyState.Flee : FlyState.Idle;
-                }
                 break;
 
             case FlyState.Flee:
@@ -117,7 +110,6 @@ public class FlyBehavior : MonoBehaviour
         }
     }
 
-    // ---------------- STATE BEHAVIORS ----------------
 
     void UpdateIdle()
     {
@@ -161,6 +153,34 @@ public class FlyBehavior : MonoBehaviour
         }
 
         ClampToCameraBounds();
+    }
+
+
+    void HandleEggLaying()
+    {
+        eggTimer += Time.deltaTime;
+        if (eggTimer >= nextEggTime)
+        {
+            LayEggs();
+            ResetEggTimer();
+        }
+    }
+
+    void LayEggs()
+    {
+        int eggCount = Random.Range(eggCountRange.x, eggCountRange.y + 1);
+
+        for (int i = 0; i < eggCount; i++)
+        {
+            Vector3 dropPos = transform.position + (Vector3)Random.insideUnitCircle * eggDropOffset;
+            Instantiate(eggPrefab, dropPos, Quaternion.identity);
+        }
+    }
+
+    void ResetEggTimer()
+    {
+        eggTimer = 0f;
+        nextEggTime = Random.Range(eggLayInterval.x, eggLayInterval.y);
     }
 
 

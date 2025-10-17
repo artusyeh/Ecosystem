@@ -521,15 +521,16 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  hungerInterval: 10
+  hungerInterval: 20
   maxHunger: 5
   maxHuntTime: 5
   eggPrefab: {fileID: 2205358570059024193, guid: c10b014e830ae9447b08c968008e15ad, type: 3}
   eggSpawnPoint: {fileID: 0}
-  foodBeforeLayEgg: 1
+  foodBeforeLayEgg: 5
   bloodParticlePrefab: {fileID: 5941797308216622353, guid: 389e614b840e0934fb282253b3b35ac9, type: 3}
   crunchSound: {fileID: 8300000, guid: 9f023f3a5a0147c4091dafde5b91abeb, type: 3}
   crunchVolume: 0.8
+  foodRefreshInterval: 5
 --- !u!1 &2834727338450522233
 GameObject:
   m_ObjectHideFlags: 0

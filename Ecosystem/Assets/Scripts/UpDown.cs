@@ -1,9 +1,11 @@
 using UnityEngine;
 
+
+// moves floaty shit idfk
 public class UpDown : MonoBehaviour
 {
     [SerializeField]
-    public float amplitude = 1f;  
+    public float amplitude = 1f;
     public float speed = 2f;
 
     private Vector3 startPos;
@@ -17,7 +19,9 @@ public class UpDown : MonoBehaviour
     void Update()
     {
         float newY = startPos.y + Mathf.Sin(Time.time * speed) * amplitude;
-
-        transform.position = new Vector3(startPos.x, newY, startPos.z);
+        Vector3 pos = transform.position;
+        pos.y = newY;
+        transform.position = pos;
     }
+
 }
