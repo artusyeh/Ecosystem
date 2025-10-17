@@ -167,17 +167,17 @@ MonoBehaviour:
   - {fileID: 682910539}
   - {fileID: 1404150069}
   - {fileID: 1240055237}
-  moveSpeedStage1: 0.5
-  moveSpeedStage2: 0.8
+  moveSpeedStage1: 1
+  moveSpeedStage2: 4
   lungeSpeed: 15
   flyTag: Food
   spiderTag: Spider
-  requiredFlies: 10
-  requiredSpiders: 3
-  fliesToEatMin: 5
-  fliesToEatMax: 10
+  requiredFlies: 20
+  requiredSpiders: 2
+  fliesToEatMin: 10
+  fliesToEatMax: 15
   spidersToEatMin: 1
-  spidersToEatMax: 2
+  spidersToEatMax: 4
   resetDelay: 5
 --- !u!4 &204646442
 Transform:
@@ -6486,7 +6486,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6893183647932475512, guid: 41b0917c4c0b892448e6a00afc283bb5, type: 3}
       propertyPath: hungerInterval
-      value: 20
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6893183647932475512, guid: 41b0917c4c0b892448e6a00afc283bb5, type: 3}
       propertyPath: foodBeforeLayEgg

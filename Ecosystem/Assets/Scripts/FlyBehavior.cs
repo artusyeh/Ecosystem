@@ -12,7 +12,7 @@ public class FlyBehavior : MonoBehaviour
     [SerializeField] float maxWaitTime = 3f;
     [SerializeField] float edgePadding = 0.5f;
 
-    [Header("Wiggle Motion")]
+    [Header("Wiggle")]
     [SerializeField] float wiggleAmplitude = 0.2f;
     [SerializeField] float wiggleFrequency = 8f;
 
@@ -21,7 +21,7 @@ public class FlyBehavior : MonoBehaviour
     [SerializeField] float panicRange = 1.2f;
     [SerializeField] string spiderTag = "Spider";
 
-    [Header("Egg Laying")]
+    [Header("Eggs")]
     [SerializeField] GameObject eggPrefab;
     [SerializeField] Vector2 eggLayInterval = new Vector2(10f, 20f);
     [SerializeField] Vector2Int eggCountRange = new Vector2Int(1, 3);

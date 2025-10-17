@@ -526,7 +526,7 @@ MonoBehaviour:
   maxHuntTime: 5
   eggPrefab: {fileID: 2205358570059024193, guid: c10b014e830ae9447b08c968008e15ad, type: 3}
   eggSpawnPoint: {fileID: 0}
-  foodBeforeLayEgg: 5
+  foodBeforeLayEgg: 3
   bloodParticlePrefab: {fileID: 5941797308216622353, guid: 389e614b840e0934fb282253b3b35ac9, type: 3}
   crunchSound: {fileID: 8300000, guid: 9f023f3a5a0147c4091dafde5b91abeb, type: 3}
   crunchVolume: 0.8

@@ -183,8 +183,8 @@ MonoBehaviour:
   panicRange: 3
   spiderTag: Spider
   eggPrefab: {fileID: 4545570767759487169, guid: 46e66038888c6064ab5420a290f1e3be, type: 3}
-  eggLayInterval: {x: 50, y: 60}
-  eggCountRange: {x: 1, y: 3}
+  eggLayInterval: {x: 45, y: 60}
+  eggCountRange: {x: 1, y: 2}
   eggDropOffset: 0.3
 --- !u!114 &7901261504895520823
 MonoBehaviour:

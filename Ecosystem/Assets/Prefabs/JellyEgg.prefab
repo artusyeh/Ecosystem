@@ -165,6 +165,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22938b8ae8958ba4089646f118f910b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hatchTime: 15
+  hatchTime: 24
   babySpiderPrefab: {fileID: 118447547791577140, guid: 99324eccfc4a1a7438e5e25a32ab64fb, type: 3}
   hatchEffect: {fileID: 5941797308216622353, guid: 389e614b840e0934fb282253b3b35ac9, type: 3}
